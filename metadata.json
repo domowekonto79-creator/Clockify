@@ -1,0 +1,5 @@
+{
+  "name": "Clockify Report AI",
+  "description": "A professional tool to fetch work time entries from Clockify, summarize them using Gemini AI, and export a polished work report to Microsoft Word format.",
+  "requestFramePermissions": []
+}
