@@ -2,7 +2,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { ClockifyService } from './services/clockifyService';
 import { generateWordReport } from './services/wordExportService';
-import { generatePdfReport } from './services/pdfExportService';
 import { ClockifyUser, ProcessedEntry } from './types';
 
 const App: React.FC = () => {
@@ -92,11 +91,6 @@ const App: React.FC = () => {
   const handleWordExport = async () => {
     if (!user || entries.length === 0) return;
     await generateWordReport(user.name, currentMonthName, entries);
-  };
-
-  const handlePdfExport = async () => {
-    if (!user || entries.length === 0) return;
-    await generatePdfReport(user.name, currentMonthName, entries);
   };
 
   const clearKey = () => {
@@ -230,17 +224,10 @@ const App: React.FC = () => {
                  <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={handleWordExport}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-sm active:scale-[0.98]"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-sm active:scale-[0.98]"
                     >
                       <i className="fas fa-file-word mr-2 text-lg"></i>
-                      Pobierz Word
-                    </button>
-                     <button
-                        onClick={handlePdfExport}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-sm active:scale-[0.98]"
-                    >
-                        <i className="fas fa-file-pdf mr-2 text-lg"></i>
-                        Pobierz PDF
+                      Pobierz raport Word
                     </button>
                  </div>
               </div>

@@ -28,6 +28,7 @@ export interface ProcessedEntry {
   project: string;
 }
 
+// FIX: Add missing ReportSummary interface to resolve import error in services/geminiService.ts
 export interface ReportSummary {
   professionalSummary: string;
   keyAchievements: string[];
