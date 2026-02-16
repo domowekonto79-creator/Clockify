@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf";
+import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { ProcessedEntry } from "../types";
 
@@ -9,7 +9,7 @@ export const generatePdfReport = async (
   entries: ProcessedEntry[]
 ) => {
   // Use 'any' to bypass missing type definitions for the autoTable plugin
-  const doc = new jsPDF() as any;
+  const doc = new jsPDF();
   const totalHours = entries.reduce((sum, e) => sum + e.durationHours, 0);
   const now = new Date();
   const monthNum = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -41,7 +41,7 @@ export const generatePdfReport = async (
     { content: totalHours.toFixed(0), styles: { fontStyle: 'bold', fillColor: bluePTE, halign: 'center' } }
   ]);
 
-  doc.autoTable({
+  (doc as any).autoTable({
     startY: 50,
     head: [['Data', 'Opis', 'Godziny']],
     body: tableData,
@@ -71,7 +71,7 @@ export const generatePdfReport = async (
     }
   });
 
-  const finalY = doc.lastAutoTable.finalY || 150;
+  const finalY = (doc as any).lastAutoTable.finalY || 150;
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");

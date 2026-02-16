@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { ClockifyService } from './services/clockifyService';
 import { summarizeWorkActivities } from './services/geminiService';
 import { generateWordReport } from './services/wordExportService';
+import { copyToClipboardForGoogleDocs } from './services/googleDocsService';
 import { ClockifyUser, ProcessedEntry, ReportSummary } from './types';
 
 const App: React.FC = () => {
@@ -17,6 +18,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
 
   const currentMonthName = useMemo(() => {
     return new Intl.DateTimeFormat('pl-PL', { month: 'long', year: 'numeric' }).format(new Date());
@@ -107,6 +109,17 @@ const App: React.FC = () => {
   const handleExport = async () => {
     if (!user || entries.length === 0) return;
     await generateWordReport(user.name, currentMonthName, entries);
+  };
+  
+  const handleCopyToClipboard = async () => {
+    if (!user || entries.length === 0) return;
+    try {
+        await copyToClipboardForGoogleDocs(user.name, currentMonthName, entries);
+        setCopyStatus('copied');
+        setTimeout(() => setCopyStatus('idle'), 2000);
+    } catch (err) {
+        setError("Nie udało się skopiować do schowka. Twoja przeglądarka może nie wspierać tej funkcji.");
+    }
   };
 
   const clearKey = () => {
@@ -246,7 +259,13 @@ const App: React.FC = () => {
                       <i className="fas fa-file-word mr-2 text-lg"></i>
                       Pobierz Word
                     </button>
-
+                     <button
+                        onClick={handleCopyToClipboard}
+                        className={`flex-1 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-sm active:scale-[0.98] ${copyStatus === 'copied' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'}`}
+                    >
+                        <i className={`fas ${copyStatus === 'copied' ? 'fa-check-circle' : 'fa-paste'} mr-2 text-lg`}></i>
+                        {copyStatus === 'copied' ? 'Skopiowano!' : 'Kopiuj do Google Docs'}
+                    </button>
                     <button
                       onClick={handleSummarize}
                       disabled={isSummarizing}
