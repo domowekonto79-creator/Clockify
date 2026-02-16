@@ -8,9 +8,7 @@ export const generatePdfReport = async (
   _monthName: string, 
   entries: ProcessedEntry[]
 ) => {
-  // We use 'any' for the document instance to allow the autoTable plugin 
-  // to be called without TypeScript complaining about missing declarations
-  // in environments where @types/jspdf-autotable isn't resolving correctly.
+  // Use 'any' to bypass missing type definitions for the autoTable plugin
   const doc = new jsPDF() as any;
   const totalHours = entries.reduce((sum, e) => sum + e.durationHours, 0);
   const now = new Date();
@@ -20,7 +18,6 @@ export const generatePdfReport = async (
   const orangePTE = [237, 125, 49]; 
   const bluePTE = [189, 215, 238];
 
-  // Configure text styles and header
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Pracownicze Towarzystwo Emerytalne", 14, 20);
@@ -39,13 +36,11 @@ export const generatePdfReport = async (
     return [formattedDate, e.description, e.durationHours.toFixed(0)];
   });
 
-  // Add total hours row to the table data
   tableData.push([
     { content: 'Suma:', colSpan: 2, styles: { fontStyle: 'bold' } }, 
     { content: totalHours.toFixed(0), styles: { fontStyle: 'bold', fillColor: bluePTE, halign: 'center' } }
   ]);
 
-  // Use autoTable plugin for generating the grid
   doc.autoTable({
     startY: 50,
     head: [['Data', 'Opis', 'Godziny']],
@@ -76,7 +71,6 @@ export const generatePdfReport = async (
     }
   });
 
-  // Use the calculated end position of the table for relative positioning of signatures
   const finalY = doc.lastAutoTable.finalY || 150;
 
   doc.setFontSize(10);
@@ -100,6 +94,5 @@ export const generatePdfReport = async (
   doc.text("Strona 1 z 1", 196, pageHeight - 15, { align: "right" });
   doc.text("B2B", 196, pageHeight - 10, { align: "right" });
 
-  // Save the PDF file
   doc.save(`Zestawienie_${userName.replace(/\s+/g, '_')}_${monthNum}_${yearNum}.pdf`);
 };
