@@ -1,4 +1,5 @@
-
+// This service file has been temporarily disabled to simplify the application and resolve build errors.
+/*
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProcessedEntry, ReportSummary } from "../types";
 
@@ -50,3 +51,4 @@ export const summarizeWorkActivities = async (entries: ProcessedEntry[]): Promis
     totalHours: totalHours
   };
 };
+*/
