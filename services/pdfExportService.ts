@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from 'jspdf-autotable';
 import { ProcessedEntry } from "../types";
 
 // Export function to generate PDF report using jsPDF and autoTable
@@ -8,7 +8,6 @@ export const generatePdfReport = async (
   _monthName: string, 
   entries: ProcessedEntry[]
 ) => {
-  // Use 'any' to bypass missing type definitions for the autoTable plugin
   const doc = new jsPDF();
   const totalHours = entries.reduce((sum, e) => sum + e.durationHours, 0);
   const now = new Date();
@@ -41,7 +40,7 @@ export const generatePdfReport = async (
     { content: totalHours.toFixed(0), styles: { fontStyle: 'bold', fillColor: bluePTE, halign: 'center' } }
   ]);
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     startY: 50,
     head: [['Data', 'Opis', 'Godziny']],
     body: tableData,

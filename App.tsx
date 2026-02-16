@@ -1,10 +1,9 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { ClockifyService } from './services/clockifyService';
-import { summarizeWorkActivities } from './services/geminiService';
 import { generateWordReport } from './services/wordExportService';
-import { copyToClipboardForGoogleDocs } from './services/googleDocsService';
-import { ClockifyUser, ProcessedEntry, ReportSummary } from './types';
+import { generatePdfReport } from './services/pdfExportService';
+import { ClockifyUser, ProcessedEntry } from './types';
 
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string>(() => {
@@ -14,11 +13,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<ClockifyUser | null>(null);
   const [entries, setEntries] = useState<ProcessedEntry[]>([]);
-  const [summary, setSummary] = useState<ReportSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isSummarizing, setIsSummarizing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
 
   const currentMonthName = useMemo(() => {
     return new Intl.DateTimeFormat('pl-PL', { month: 'long', year: 'numeric' }).format(new Date());
@@ -93,40 +89,20 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSummarize = async () => {
-    if (entries.length === 0) return;
-    setIsSummarizing(true);
-    try {
-      const aiSummary = await summarizeWorkActivities(entries);
-      setSummary(aiSummary);
-    } catch (err) {
-      setError("Błąd AI. Sprawdź czy opisy zadań nie są puste.");
-    } finally {
-      setIsSummarizing(false);
-    }
-  };
-
-  const handleExport = async () => {
+  const handleWordExport = async () => {
     if (!user || entries.length === 0) return;
     await generateWordReport(user.name, currentMonthName, entries);
   };
-  
-  const handleCopyToClipboard = async () => {
+
+  const handlePdfExport = async () => {
     if (!user || entries.length === 0) return;
-    try {
-        await copyToClipboardForGoogleDocs(user.name, currentMonthName, entries);
-        setCopyStatus('copied');
-        setTimeout(() => setCopyStatus('idle'), 2000);
-    } catch (err) {
-        setError("Nie udało się skopiować do schowka. Twoja przeglądarka może nie wspierać tej funkcji.");
-    }
+    await generatePdfReport(user.name, currentMonthName, entries);
   };
 
   const clearKey = () => {
     setApiKey('');
     setUser(null);
     setEntries([]);
-    setSummary(null);
     localStorage.removeItem('clockify_api_key');
   };
 
@@ -250,48 +226,24 @@ const App: React.FC = () => {
               </div>
 
               <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm space-y-3">
-                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 pl-1">Eksport i Narzędzia</h3>
+                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 pl-1">Eksport raportu</h3>
                  <div className="flex flex-col sm:flex-row gap-3">
                     <button
-                      onClick={handleExport}
-                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-sm active:scale-[0.98]"
+                      onClick={handleWordExport}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-sm active:scale-[0.98]"
                     >
                       <i className="fas fa-file-word mr-2 text-lg"></i>
                       Pobierz Word
                     </button>
                      <button
-                        onClick={handleCopyToClipboard}
-                        className={`flex-1 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-sm active:scale-[0.98] ${copyStatus === 'copied' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'}`}
+                        onClick={handlePdfExport}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-sm active:scale-[0.98]"
                     >
-                        <i className={`fas ${copyStatus === 'copied' ? 'fa-check-circle' : 'fa-paste'} mr-2 text-lg`}></i>
-                        {copyStatus === 'copied' ? 'Skopiowano!' : 'Kopiuj do Google Docs'}
-                    </button>
-                    <button
-                      onClick={handleSummarize}
-                      disabled={isSummarizing}
-                      className="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 font-bold py-3 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center text-sm disabled:opacity-50 active:scale-[0.98]"
-                    >
-                      {isSummarizing ? (
-                        <i className="fas fa-sparkles fa-spin mr-2"></i>
-                      ) : (
-                        <i className="fas fa-wand-magic-sparkles mr-2"></i>
-                      )}
-                      Analiza AI
+                        <i className="fas fa-file-pdf mr-2 text-lg"></i>
+                        Pobierz PDF
                     </button>
                  </div>
               </div>
-
-              {summary && (
-                <section className="bg-orange-500 rounded-2xl shadow-xl p-6 text-white animate-in slide-in-from-bottom-4 duration-500">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 opacity-70 flex items-center">
-                    <i className="fas fa-brain mr-2 text-xs"></i>
-                    Podsumowanie AI
-                  </h3>
-                  <p className="text-lg leading-relaxed font-medium italic">
-                    "{summary.professionalSummary}"
-                  </p>
-                </section>
-              )}
 
               <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
