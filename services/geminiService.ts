@@ -3,8 +3,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { ProcessedEntry, ReportSummary } from "../types";
 
 export const summarizeWorkActivities = async (entries: ProcessedEntry[]): Promise<ReportSummary> => {
-  // Always use {apiKey: process.env.API_KEY} for initialization as per guidelines
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("Klucz API Gemini nie został skonfigurowany w zmiennych środowiskowych.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const activitiesList = entries
     .map(e => `[${e.project}] ${e.description} (${e.durationHours.toFixed(2)}h)`)
@@ -14,7 +19,7 @@ export const summarizeWorkActivities = async (entries: ProcessedEntry[]): Promis
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Please summarize the following work activities from the current month into a professional monthly report summary. 
+    contents: `Please summarize the following work activities from the current month into a professional monthly report summary in Polish language. 
     Focus on clarity, professional tone, and grouping similar tasks.
     
     Activities:
@@ -39,11 +44,10 @@ export const summarizeWorkActivities = async (entries: ProcessedEntry[]): Promis
     }
   });
 
-  // Extract text using the .text property (not a method)
   const data = JSON.parse(response.text || "{}");
   
   return {
-    professionalSummary: data.professionalSummary || "No summary generated.",
+    professionalSummary: data.professionalSummary || "Nie udało się wygenerować podsumowania.",
     keyAchievements: data.keyAchievements || [],
     totalHours: totalHours
   };
