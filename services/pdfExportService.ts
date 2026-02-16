@@ -1,7 +1,5 @@
-
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { UserOptions } from "jspdf-autotable";
 import { ProcessedEntry } from "../types";
 
 // Export function to generate PDF report using jsPDF and autoTable
@@ -10,8 +8,9 @@ export const generatePdfReport = async (
   _monthName: string, 
   entries: ProcessedEntry[]
 ) => {
-  // Using 'any' type for doc to resolve issues where TypeScript doesn't see augmented methods
-  // when using jspdf-autotable alongside standard jsPDF methods.
+  // We use 'any' for the document instance to allow the autoTable plugin 
+  // to be called without TypeScript complaining about missing declarations
+  // in environments where @types/jspdf-autotable isn't resolving correctly.
   const doc = new jsPDF() as any;
   const totalHours = entries.reduce((sum, e) => sum + e.durationHours, 0);
   const now = new Date();
@@ -53,7 +52,7 @@ export const generatePdfReport = async (
     body: tableData,
     theme: 'grid',
     headStyles: {
-      fillColor: orangePTE as [number, number, number],
+      fillColor: orangePTE,
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'left'
@@ -63,9 +62,9 @@ export const generatePdfReport = async (
       1: { cellWidth: 'auto' },
       2: { cellWidth: 20, halign: 'center' }
     },
-    didParseCell: function (data) {
+    didParseCell: function (data: any) {
       if (data.section === 'head' && data.column.index === 2) {
-        data.cell.styles.fillColor = bluePTE as [number, number, number];
+        data.cell.styles.fillColor = bluePTE;
         data.cell.styles.textColor = [0, 0, 0];
       }
     },
@@ -75,7 +74,7 @@ export const generatePdfReport = async (
       lineColor: [0, 0, 0],
       lineWidth: 0.1,
     }
-  } as UserOptions);
+  });
 
   // Use the calculated end position of the table for relative positioning of signatures
   const finalY = doc.lastAutoTable.finalY || 150;
