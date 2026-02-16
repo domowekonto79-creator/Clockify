@@ -1,24 +1,27 @@
 
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import "jspdf-autotable";
+import { UserOptions } from "jspdf-autotable";
 import { ProcessedEntry } from "../types";
 
+// Export function to generate PDF report using jsPDF and autoTable
 export const generatePdfReport = async (
   userName: string, 
-  monthName: string, 
+  _monthName: string, 
   entries: ProcessedEntry[]
 ) => {
-  const doc = new jsPDF();
+  // Using 'any' type for doc to resolve issues where TypeScript doesn't see augmented methods
+  // when using jspdf-autotable alongside standard jsPDF methods.
+  const doc = new jsPDF() as any;
   const totalHours = entries.reduce((sum, e) => sum + e.durationHours, 0);
   const now = new Date();
   const monthNum = (now.getMonth() + 1).toString().padStart(2, '0');
   const yearNum = now.getFullYear().toString();
 
-  // Header Colors & Fonts
-  const orangePTE = [237, 125, 49]; // #ED7D31
-  const bluePTE = [189, 215, 238];   // #BDD7EE
+  const orangePTE = [237, 125, 49]; 
+  const bluePTE = [189, 215, 238];
 
-  // Header
+  // Configure text styles and header
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Pracownicze Towarzystwo Emerytalne", 14, 20);
@@ -27,30 +30,30 @@ export const generatePdfReport = async (
   doc.setFontSize(9);
   doc.text("Załącznik do Umowy o świadczenie usług", 196, 20, { align: "right" });
 
-  // Title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.text(`Zestawienie czynności wykonanych w miesiącu ${monthNum}/${yearNum}`, 105, 40, { align: "center" });
 
-  // Table
-  // Add explicit type to tableData to avoid inference as string[][] so cell objects can be pushed
   const tableData: any[][] = entries.map(e => {
     const dateParts = e.date.split('.');
     const formattedDate = dateParts.length === 3 ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}` : e.date;
     return [formattedDate, e.description, e.durationHours.toFixed(0)];
   });
 
-  // Add Sum Row
-  // Use cell objects for colSpan and custom styling
-  tableData.push([{ content: 'Suma:', colSpan: 2, styles: { fontStyle: 'bold' } }, { content: totalHours.toFixed(0), styles: { fontStyle: 'bold', fillColor: bluePTE, halign: 'center' } }]);
+  // Add total hours row to the table data
+  tableData.push([
+    { content: 'Suma:', colSpan: 2, styles: { fontStyle: 'bold' } }, 
+    { content: totalHours.toFixed(0), styles: { fontStyle: 'bold', fillColor: bluePTE, halign: 'center' } }
+  ]);
 
-  autoTable(doc, {
+  // Use autoTable plugin for generating the grid
+  doc.autoTable({
     startY: 50,
     head: [['Data', 'Opis', 'Godziny']],
     body: tableData,
     theme: 'grid',
     headStyles: {
-      fillColor: orangePTE,
+      fillColor: orangePTE as [number, number, number],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'left'
@@ -58,12 +61,11 @@ export const generatePdfReport = async (
     columnStyles: {
       0: { cellWidth: 30, halign: 'center' },
       1: { cellWidth: 'auto' },
-      2: { cellWidth: 20, halign: 'center', fillColor: bluePTE }
+      2: { cellWidth: 20, halign: 'center' }
     },
-    // Special handling for the third header which should be blue
     didParseCell: function (data) {
       if (data.section === 'head' && data.column.index === 2) {
-        data.cell.styles.fillColor = bluePTE;
+        data.cell.styles.fillColor = bluePTE as [number, number, number];
         data.cell.styles.textColor = [0, 0, 0];
       }
     },
@@ -73,11 +75,11 @@ export const generatePdfReport = async (
       lineColor: [0, 0, 0],
       lineWidth: 0.1,
     }
-  });
+  } as UserOptions);
 
-  const finalY = (doc as any).lastAutoTable.finalY || 150;
+  // Use the calculated end position of the table for relative positioning of signatures
+  const finalY = doc.lastAutoTable.finalY || 150;
 
-  // Signatures
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   
@@ -94,12 +96,11 @@ export const generatePdfReport = async (
   sigY += 5;
   doc.text("Podpis osoby akceptującej zestawienie w imieniu PTE", 14, sigY);
 
-  // Footer
   const pageHeight = doc.internal.pageSize.height;
   doc.setFontSize(8);
   doc.text("Strona 1 z 1", 196, pageHeight - 15, { align: "right" });
   doc.text("B2B", 196, pageHeight - 10, { align: "right" });
 
-  // Save
+  // Save the PDF file
   doc.save(`Zestawienie_${userName.replace(/\s+/g, '_')}_${monthNum}_${yearNum}.pdf`);
 };

@@ -2,14 +2,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ProcessedEntry, ReportSummary } from "../types";
 
+// Summarize work activities into a professional Polish report using Gemini
 export const summarizeWorkActivities = async (entries: ProcessedEntry[]): Promise<ReportSummary> => {
-  const apiKey = process.env.API_KEY;
-  
-  if (!apiKey) {
-    throw new Error("Klucz API Gemini nie został skonfigurowany w zmiennych środowiskowych.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Use process.env.API_KEY directly as per strict guidelines
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   
   const activitiesList = entries
     .map(e => `[${e.project}] ${e.description} (${e.durationHours.toFixed(2)}h)`)
@@ -17,6 +13,7 @@ export const summarizeWorkActivities = async (entries: ProcessedEntry[]): Promis
 
   const totalHours = entries.reduce((sum, e) => sum + e.durationHours, 0);
 
+  // Generate content using the specified Gemini 3 Flash model for summarization tasks
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Please summarize the following work activities from the current month into a professional monthly report summary in Polish language. 
@@ -44,6 +41,7 @@ export const summarizeWorkActivities = async (entries: ProcessedEntry[]): Promis
     }
   });
 
+  // Extract text directly from response.text property (getter)
   const data = JSON.parse(response.text || "{}");
   
   return {
